@@ -1,0 +1,587 @@
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+  <meta charset="UTF-8" />  
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />  
+  <title>iPhone Media Gallery</title>  
+  
+  <style>  
+    :root {  
+      --bg:#111;  
+      --panel:#1b1b1f;  
+      --panel2:#232329;  
+      --text:#f2f2f2;  
+      --muted:#9aa0a6;  
+      --accent1:#4a90e2;  
+      --accent2:#357ab7;  
+      --danger:#ff4153;  
+      --ok:#35d07f;  
+      --radius:14px;  
+      --radius-sm:10px;  
+      --shadow:0 8px 24px rgba(0,0,0,.35);  
+    }  
+  
+    * {  
+      box-sizing:border-box;  
+      -webkit-tap-highlight-color:transparent;  
+    }  
+  
+    body {  
+      margin:0;  
+      background:var(--bg);  
+      color:var(--text);  
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,system-ui,sans-serif;  
+    }  
+  
+    header {  
+      position:sticky;  
+      top:0;  
+      z-index:20;  
+      background:linear-gradient(180deg,var(--panel),#18181b);  
+      border-bottom:1px solid #2a2a2f;  
+      box-shadow:var(--shadow);  
+    }  
+  
+    .bar {  
+      padding:10px 12px;  
+      display:flex;  
+      gap:8px;  
+      flex-wrap:wrap;  
+      align-items:center;  
+      justify-content:center;  
+    }  
+  
+    textarea {  
+      width:100%;  
+      max-width:520px;  
+      height:110px;  
+      padding:12px;  
+      border-radius:var(--radius);  
+      border:1px solid #2f2f36;  
+      background:var(--panel2);  
+      color:var(--text);  
+      outline:none;  
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.03);  
+    }  
+  
+    .btn {  
+      appearance:none;  
+      border:0;  
+      border-radius:14px;  
+      padding:12px 16px;  
+      font-weight:600;  
+      cursor:pointer;  
+      background:linear-gradient(180deg,var(--accent1),var(--accent2));  
+      color:#fff;  
+      transition:transform .12s ease,filter .12s ease,opacity .12s ease;  
+    }  
+  
+    .btn:active { transform:scale(.98); }  
+    .btn.secondary { background:linear-gradient(180deg,#2f3340,#2a2d39); }  
+    .btn.danger    { background:linear-gradient(180deg,#ff5a66,#e63b4a); }  
+  
+    .chip {  
+      font-size:13px;  
+      color:var(--muted);  
+      padding:6px 10px;  
+      border:1px solid #2b2b31;  
+      border-radius:999px;  
+      background:#18181d;  
+    }  
+  
+    .grid {  
+      display:grid;  
+      grid-template-columns:repeat(auto-fill,minmax(160px,1fr));  
+      gap:10px;  
+      padding:12px;  
+    }  
+  
+    .item {  
+      background:#202026;  
+      border:1px solid #2b2b32;  
+      border-radius:16px;  
+      overflow:hidden;  
+      display:flex;  
+      align-items:center;  
+      justify-content:center;  
+      min-height:160px;  
+      position:relative;  
+      cursor:pointer;  
+      box-shadow:0 2px 10px rgba(0,0,0,.25);  
+    }  
+  
+    .item .thumb {  
+      max-width:100%;  
+      max-height:100%;  
+      display:block;  
+      object-fit:cover;  
+    }  
+  
+    .badge {  
+      position:absolute;  
+      bottom:8px;  
+      left:8px;  
+      font-size:11px;  
+      background:rgba(0,0,0,.55);  
+      padding:4px 8px;  
+      border-radius:999px;  
+      color:#ddd;  
+    }  
+  
+    .spinner {  
+      width:28px;  
+      height:28px;  
+      border-radius:50%;  
+      border:3px solid #3a3a43;  
+      border-top:3px solid var(--accent1);  
+      animation:spin 1s linear infinite;  
+    }  
+  
+    @keyframes spin { to { transform:rotate(360deg); } }  
+  
+    /* ===== Modal ===== */  
+    .modal {  
+      display:none;  
+      position:fixed;  
+      inset:0;  
+      background:rgba(0,0,0,.96);  
+      z-index:50;  
+    }  
+  
+    .modal.open { display:block; }  
+  
+    .stage {  
+      position:absolute;  
+      inset:0;  
+      display:flex;  
+      align-items:center;  
+      justify-content:center;  
+      padding:16px;  
+    }  
+  
+    .stage img,  
+    .stage video {  
+      max-width:100%;  
+      max-height:85vh;  
+      border-radius:16px;  
+      box-shadow:var(--shadow);  
+      background:#000;  
+    }  
+  
+    .x {  
+      position:absolute;  
+      top:16px;  
+      right:16px;  
+      width:44px;  
+      height:44px;  
+      border-radius:50%;  
+      display:flex;  
+      align-items:center;  
+      justify-content:center;  
+      background:rgba(255,255,255,.12);  
+      backdrop-filter:blur(8px);  
+      font-size:22px;  
+      cursor:pointer;  
+      transition:opacity .15s ease,transform .12s ease;  
+    }  
+  
+    .x:active { transform:scale(.96); }  
+  
+    .nav {  
+      position:absolute;  
+      top:50%;  
+      transform:translateY(-50%);  
+      width:48px;  
+      height:48px;  
+      border-radius:50%;  
+      background:rgba(255,255,255,.12);  
+      display:flex;  
+      align-items:center;  
+      justify-content:center;  
+      font-size:26px;  
+      cursor:pointer;  
+    }  
+  
+    .nav.left  { left:12px; }  
+    .nav.right { right:12px; }  
+  
+    .caption {  
+      position:absolute;  
+      left:0;  
+      right:0;  
+      bottom:10px;  
+      text-align:center;  
+      color:#cfcfcf;  
+      font-size:13px;  
+      padding:8px 12px;  
+    }  
+  
+    .modalbar {  
+      position:absolute;  
+      bottom:18px;  
+      right:18px;  
+      display:flex;  
+      gap:8px;  
+    }  
+  
+    .small {  
+      padding:10px 12px;  
+      border-radius:12px;  
+      font-size:14px;  
+    }  
+  </style>  
+</head>  
+<body>  
+  
+  <header>  
+    <div class="bar" style="padding-bottom:6px">  
+      <textarea id="urlInput" placeholder="Paste media URLs here (one per line):  .jpg .png .gif .mp4 .webm"></textarea>  
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%">  
+        <button class="btn" id="addBtn">Add URLs</button>  
+        <button class="btn secondary" id="toggleBtn">Show Loaded Only</button>  
+        <button class="btn secondary" id="shuffleBtn">Randomize Library</button>  
+        <button class="btn secondary" id="filterBtn">Show: All</button>  
+        <button class="btn danger" id="deleteAllBtn">Delete All</button>  
+        <span class="chip" id="stats">Total 0 · Loaded 0 · Pending 0 · Errors 0</span>  
+      </div>  
+    </div>  
+  </header>  
+  
+  <main>  
+    <div id="grid" class="grid"></div>  
+  </main>  
+  
+  <!-- ===== Modal viewer ===== -->  
+  <div id="modal" class="modal" aria-hidden="true">  
+    <div class="stage" id="stage">  
+      <img id="mImg" alt="" />  
+      <video id="mVid" controls playsinline></video>  
+    </div>  
+  
+    <div class="x" id="closeBtn">✕</div>  
+    <div class="nav left" id="prevBtn">‹</div>  
+    <div class="nav right" id="nextBtn">›</div>  
+  
+    <div class="modalbar">  
+      <button class="btn danger small" id="deleteBtn">Delete This</button>  
+      <button class="btn secondary small" id="randomNextBtn">Random Next</button>  
+    </div>  
+  
+    <div class="caption" id="caption"></div>  
+  </div>  
+  
+  <script>  
+    /* ===== Service Worker ===== */  
+    if ('serviceWorker' in navigator) {  
+      navigator.serviceWorker.register('./sw.js').catch(()=>{});  
+    }  
+  
+    /* ===== State & persistence ===== */  
+    const STORAGE_KEY = 'mediaLibrary_v2';  
+    let library = loadLibrary();  
+    let showLoadedOnly = false;  
+    let randomized = false;  
+    let filterMode = 'all'; // all | images | videos  
+  
+    const grid      = document.getElementById('grid');  
+    const statsEl   = document.getElementById('stats');  
+    const urlInput  = document.getElementById('urlInput');  
+  
+    let loadedCount = 0, errorCount = 0, pendingCount = 0;  
+  
+    /* ===== Utils ===== */  
+    const isMediaUrl = u => /\.(jpe?g|png|gif|mp4|webm)$/i.test(u);  
+    const isVideo    = u => /\.(mp4|webm)$/i.test(u);  
+  
+    function saveLibrary(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(library)); }  
+    function loadLibrary(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); } catch(e){ return []; } }  
+  
+    function updateStats(){  
+      const total = library.length;  
+      loadedCount = library.filter(x=>x.status==='loaded').length;  
+      pendingCount = library.filter(x=>x.status!=='loaded').length;  
+      statsEl.textContent = `Total ${total} · Loaded ${loadedCount} · Pending ${pendingCount} · Errors ${errorCount}`;  
+    }  
+  
+    function shuffleInPlace(arr){  
+      for(let i=arr.length-1;i>0;i--){  
+        const j = Math.floor(Math.random()*(i+1));  
+        [arr[i],arr[j]]=[arr[j],arr[i]];  
+      }  
+    }  
+  
+    /* ===== Rendering ===== */  
+    function renderAll(){  
+      grid.innerHTML = '';  
+      let items = [...library];  
+      if (randomized) shuffleInPlace(items);  
+      items.forEach(entry => addTile(entry));  
+      updateStats();  
+    }  
+  
+    function addTile(entry){  
+      if (showLoadedOnly && entry.status!=='loaded') return;  
+      if (filterMode==='images' && isVideo(entry.url)) return;  
+      if (filterMode==='videos' && !isVideo(entry.url)) return;  
+  
+      const item = document.createElement('div');  
+      item.className = 'item';  
+      item.dataset.url = entry.url;  
+  
+      if (entry.status!=='loaded') {  
+        const wrap = document.createElement('div');  
+        wrap.style.display='flex';  
+        wrap.style.flexDirection='column';  
+        wrap.style.alignItems='center';  
+        wrap.style.gap='8px';  
+        wrap.innerHTML = `<div class="spinner"></div><div style="color:#b3b7bd;font-size:12px">Downloading…</div>`;  
+        item.appendChild(wrap);  
+        grid.appendChild(item);  
+      } else {  
+        const media = document.createElement(isVideo(entry.url)?'video':'img');  
+        media.className = 'thumb';  
+  
+        if (media.tagName==='VIDEO') {  
+          media.muted=true;  
+          media.loop=true;  
+          media.autoplay=true;  
+          media.playsInline=true;  
+          media.src = entry.url;  
+          media.addEventListener('loadeddata',()=> appendMediaToTile(item, media, entry));  
+        } else {  
+          const img = new Image();  
+          img.className = 'thumb';  
+          img.onload = ()=> appendMediaToTile(item, img, entry);  
+          img.src = entry.url;  
+        }  
+        grid.appendChild(item);  
+      }  
+  
+      item.addEventListener('click',()=>openViewer(entry.url));  
+    }  
+  
+    function appendMediaToTile(tile, media, entry){  
+      tile.innerHTML='';  
+      tile.appendChild(media);  
+      const badge = document.createElement('div');  
+      badge.className='badge';  
+      let type='Image';  
+      if (/\.gif$/i.test(entry.url)) type='GIF';  
+      else if (isVideo(entry.url)) type='Video';  
+      badge.textContent=`Loaded · ${type}`;  
+      tile.appendChild(badge);  
+    }  
+  
+    /* ===== Add URLs flow ===== */  
+    document.getElementById('addBtn').addEventListener('click',()=>{  
+      const raw = urlInput.value.trim();  
+      if(!raw){ alert('Paste some URLs first'); return; }  
+  
+      const newUrls = raw.split('\n').map(s=>s.trim()).filter(Boolean).filter(isMediaUrl);  
+      if(newUrls.length===0){ alert('No valid media URLs found (.jpg .png .gif .mp4 .webm)'); return; }  
+  
+      const existing = new Set(library.map(x=>x.url));  
+      const toAdd = newUrls.filter(u=>!existing.has(u)).map(u=>({url:u, addedAt:Date.now(), status:'pending'}));  
+      if(toAdd.length===0){ alert('All pasted URLs were already in your library.'); return; }  
+  
+      library.push(...toAdd);  
+      saveLibrary();  
+      toAdd.forEach(addTile);  
+      queueDownloads(toAdd);  
+      urlInput.value='';  
+      updateStats();  
+    });  
+  
+    /* ===== Toggle Loaded-only ===== */  
+    document.getElementById('toggleBtn').addEventListener('click',()=>{  
+      showLoadedOnly = !showLoadedOnly;  
+      document.getElementById('toggleBtn').textContent = showLoadedOnly ? 'Show All' : 'Show Loaded Only';  
+      renderAll();  
+    });  
+  
+    /* ===== Randomize ===== */  
+    document.getElementById('shuffleBtn').addEventListener('click',()=>{  
+      randomized = !randomized;  
+      document.getElementById('shuffleBtn').textContent = randomized ? 'Order by Added' : 'Randomize Library';  
+      renderAll();  
+    });  
+  
+    /* ===== Filter ===== */  
+    document.getElementById('filterBtn').addEventListener('click',()=>{  
+      if(filterMode==='all'){ filterMode='images'; document.getElementById('filterBtn').textContent='Show: Images'; }  
+      else if(filterMode==='images'){ filterMode='videos'; document.getElementById('filterBtn').textContent='Show: Videos'; }  
+      else { filterMode='all'; document.getElementById('filterBtn').textContent='Show: All'; }  
+      renderAll();  
+    });  
+  
+    /* ===== Delete All ===== */  
+    document.getElementById('deleteAllBtn').addEventListener('click', async ()=>{  
+      if(!confirm('Delete ALL files from the gallery?')) return;  
+      grid.innerHTML='';  
+      library = [];  
+      saveLibrary();  
+      updateStats();  
+      if (navigator.serviceWorker?.controller) {  
+        navigator.serviceWorker.controller.postMessage({type:'CLEAR_CACHE'});  
+      }  
+    });  
+  
+    /* ===== Download queue ===== */  
+    const MAX_PARALLEL = 10;  
+    let active = 0;  
+    const dlQueue = [];  
+  
+    function queueDownloads(entries){  
+      entries.forEach(e=>dlQueue.push(e));  
+      processQueue();  
+    }  
+  
+    function processQueue(){  
+      while(active < MAX_PARALLEL && dlQueue.length){  
+        const entry = dlQueue.shift();  
+        active++;  
+        loadEntry(entry).finally(()=>{ active--; processQueue(); });  
+      }  
+    }  
+  
+    function markLoaded(entry){  
+      entry.status='loaded'; saveLibrary();  
+      const tile = grid.querySelector(`.item[data-url="${CSS.escape(entry.url)}"]`);  
+      if(!tile){ if(!showLoadedOnly) addTile(entry); return; }  
+  
+      tile.innerHTML='';  
+      const media = document.createElement(isVideo(entry.url)?'video':'img');  
+      media.className='thumb';  
+      if (media.tagName==='VIDEO'){ media.muted=true; media.loop=true; media.autoplay=true; media.playsInline=true; }  
+      media.src = entry.url;  
+      tile.appendChild(media);  
+  
+      const badge = document.createElement('div');   
+      badge.className='badge';   
+      let type = 'Image';  
+      if (/\.gif$/i.test(entry.url)) type = 'GIF';  
+      else if (isVideo(entry.url)) type = 'Video';  
+      badge.textContent = `Loaded · ${type}`;  
+      tile.appendChild(badge);  
+  
+      updateStats();  
+    }  
+  
+    function removeEntry(entry){  
+      const idx = library.findIndex(x=>x.url===entry.url);  
+      if(idx>-1){ library.splice(idx,1); saveLibrary(); }  
+      const tile = grid.querySelector(`.item[data-url="${CSS.escape(entry.url)}"]`);  
+      if(tile) tile.remove();  
+      updateStats();  
+    }  
+  
+    async function loadEntry(entry){  
+      try{  
+        const res = await fetch(entry.url, {mode:'cors'});  
+        if(!res.ok) throw new Error('HTTP '+res.status);  
+  
+        if(!isVideo(entry.url)){  
+          const blob = await res.clone().blob();  
+          const objURL = URL.createObjectURL(blob);  
+          const img = new Image();  
+          await new Promise((resolve,reject)=>{  
+            img.onload=()=>resolve();  
+            img.onerror=()=>reject(new Error('img decode failed'));  
+            img.src = objURL;  
+          });  
+          const w = img.naturalWidth, h = img.naturalHeight;  
+          URL.revokeObjectURL(objURL);  
+  
+          if ((entry.url.includes('i.imgur.com') || entry.url.includes('i.redd.it')) && w <= 161 && h <= 81) {  
+            errorCount++; removeEntry(entry); return;  
+          }  
+        }  
+        markLoaded(entry);  
+      }catch(err){  
+        errorCount++; removeEntry(entry);  
+      }  
+    }  
+  
+    /* ===== Viewer ===== */  
+    const modal        = document.getElementById('modal');  
+    const mImg         = document.getElementById('mImg');  
+    const mVid         = document.getElementById('mVid');  
+    const caption      = document.getElementById('caption');  
+    const closeBtn     = document.getElementById('closeBtn');  
+    const prevBtn      = document.getElementById('prevBtn');  
+    const nextBtn      = document.getElementById('nextBtn');  
+    const deleteBtn    = document.getElementById('deleteBtn');  
+    const randomNextBtn= document.getElementById('randomNextBtn');  
+  
+    let slidePool = [];  
+    let currentUrl = null;  
+  
+    function buildSlidePool(){  
+      slidePool = library.filter(x=>x.status==='loaded').map(x=>x.url);  
+    }  
+  
+    function openViewer(url){  
+      buildSlidePool();  
+      currentUrl = url;  
+      showMedia(url);  
+      modal.classList.add('open');  
+      modal.setAttribute('aria-hidden','false');  
+    }  
+  
+    function closeViewer(){  
+      modal.classList.remove('open');  
+      modal.setAttribute('aria-hidden','true');  
+      mImg.src=''; mVid.src='';  
+    }  
+  
+    function showMedia(url){  
+      currentUrl = url;  
+      const entry = library.find(x=>x.url===url);  
+      mImg.style.display='none';  
+      mVid.style.display='none';  
+  
+      if (isVideo(url)){  
+        mVid.src=url;  
+        mVid.style.display='block';  
+      } else {  
+        mImg.src=url;  
+        mImg.style.display='block';  
+      }  
+      caption.textContent = url;  
+    }  
+  
+    function showNeighbor(dir){  
+      const idx = slidePool.indexOf(currentUrl);  
+      if(idx<0) return;  
+      const nextIdx = (idx + dir + slidePool.length) % slidePool.length;  
+      showMedia(slidePool[nextIdx]);  
+    }  
+  
+    function showRandom(){  
+      if(slidePool.length===0) return;  
+      const rand = Math.floor(Math.random()*slidePool.length);  
+      showMedia(slidePool[rand]);  
+    }  
+  
+    closeBtn.addEventListener('click', closeViewer);  
+    prevBtn.addEventListener('click', ()=>showNeighbor(-1));  
+    nextBtn.addEventListener('click', ()=>showNeighbor(1));  
+    deleteBtn.addEventListener('click',()=>{  
+      const entry = library.find(x=>x.url===currentUrl);  
+      if(entry){ removeEntry(entry); showNeighbor(1); }  
+    });  
+    randomNextBtn.addEventListener('click', showRandom);  
+  
+    document.addEventListener('keydown', e=>{  
+      if(modal.classList.contains('open')){  
+        if(e.key==='Escape') closeViewer();  
+        else if(e.key==='ArrowLeft') showNeighbor(-1);  
+        else if(e.key==='ArrowRight') showNeighbor(1);  
+      }  
+    });  
+  
+    renderAll();  
+    queueDownloads(library.filter(e=>e.status!=='loaded'));  
+  </script>  
+</body>  
+</html>  
